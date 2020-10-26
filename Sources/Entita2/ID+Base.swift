@@ -1,16 +1,14 @@
-import LGNCore
-
 /// A protocol for anything that identifies something and can be represented as bytes
 public protocol Identifiable: Hashable {
     var _bytes: Bytes { get }
 }
 
-public extension E2 {
+public extension Entita2 {
     struct ID<Value: Codable & Hashable>: Identifiable {
         public let value: Value
 
         @inlinable public var _bytes: Bytes {
-            LGNCore.getBytes(value)
+            getBytes(value)
         }
 
         public init(value: Value) {
@@ -19,4 +17,4 @@ public extension E2 {
     }
 }
 
-extension E2.ID: Equatable {}
+extension Entita2.ID: Equatable {}

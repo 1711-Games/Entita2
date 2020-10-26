@@ -1,3 +1,8 @@
 import NIO
 
-public typealias Future = EventLoopFuture
+internal extension EventLoop {
+    @usableFromInline
+    var future: EventLoopFuture<Void> {
+        self.makeSucceededFuture(Void())
+    }
+}

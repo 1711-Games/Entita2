@@ -1,24 +1,36 @@
 import Foundation
 import XCTest
-import LGNCore
 import NIO
 import MessagePack
 @testable import Entita2
 
 final class Entita2Tests: XCTestCase {
     static var eventLoop = EmbeddedEventLoop()
+    static let storage = DummyStorage()
 
     struct DummyStorage: E2Storage {
+        struct Transaction: AnyTransaction {
+            let eventLoop: EventLoop
+
+            func commit() -> EventLoopFuture<Void> {
+                eventLoop.future
+            }
+        }
+
+        func begin(on eventLoop: EventLoop) -> EventLoopFuture<AnyTransaction> {
+            eventLoop.makeSucceededFuture(Transaction(eventLoop: eventLoop))
+        }
+
         func load(
             by key: Bytes,
             within transaction: AnyTransaction?,
             on eventLoop: EventLoop
-        ) -> Future<Bytes?> {
+        ) -> EventLoopFuture<Bytes?> {
             let result: Bytes?
 
             switch key {
             case TestEntity.sampleEntity.getIDAsKey(): // TestEntity
-                result = LGNCore.getBytes("""
+                result = getBytes("""
                     {
                         "string": "foo",
                         "ints": [322, 1337],
@@ -36,7 +48,7 @@ final class Entita2Tests: XCTestCase {
                     }
                 """)
             case TestEntity.sampleEntity.subEntity.getIDAsKey(): // TestEntity.SubEntity
-                result = LGNCore.getBytes("""
+                result = getBytes("""
                     {
                         "myValue": "sikes",
                         "customID": 1337
@@ -56,7 +68,7 @@ final class Entita2Tests: XCTestCase {
             by key: Bytes,
             within transaction: AnyTransaction?,
             on eventLoop: EventLoop
-        ) -> Future<Void> {
+        ) -> EventLoopFuture<Void> {
             return eventLoop.makeSucceededFuture(Void())
         }
 
@@ -64,7 +76,7 @@ final class Entita2Tests: XCTestCase {
             by key: Bytes,
             within transaction: AnyTransaction?,
             on eventLoop: EventLoop
-        ) -> Future<Void> {
+        ) -> EventLoopFuture<Void> {
             return eventLoop.makeSucceededFuture(Void())
         }
     }
@@ -72,11 +84,10 @@ final class Entita2Tests: XCTestCase {
     final class TestEntity: E2Entity, Equatable {
         struct SubEntity: E2Entity, Equatable {
             typealias Identifier = Int
-            typealias Storage = DummyStorage
 
+            static var storage: some Entita2Storage = Entita2Tests.storage
             static var fullEntityName: Bool = false
             static var format: E2.Format = .JSON
-            static var storage: Entita2Tests.DummyStorage = DummyStorage()
             static var IDKey: KeyPath<SubEntity, Identifier> = \.customID
             static var sampleEntity: Self {
                 Self(customID: 1337, myValue: "sikes")
@@ -97,10 +108,9 @@ final class Entita2Tests: XCTestCase {
         }
 
         typealias Identifier = E2.UUID
-        typealias Storage = DummyStorage
 
+        static var storage: DummyStorage = Entita2Tests.storage
         static var format: E2.Format = .JSON
-        static var storage: Entita2Tests.DummyStorage = DummyStorage()
         static var IDKey: KeyPath<TestEntity, Identifier> = \.ID
         static var sampleEntity: TestEntity {
             TestEntity(
@@ -140,74 +150,116 @@ final class Entita2Tests: XCTestCase {
         var didCallAfterDelete0: Bool = false
         var didCallAfterDelete: Bool = false
 
-        public func afterLoad0(on eventLoop: EventLoop) -> Future<Void> {
+        public func afterLoad0(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterLoad0 = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        public func afterLoad(on eventLoop: EventLoop) -> Future<Void> {
+        public func afterLoad(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterLoad = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func beforeSave0(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func beforeSave0(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallBeforeSave0 = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func beforeSave(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func beforeSave(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallBeforeSave = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func afterSave0(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func afterSave0(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterSave0 = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func afterSave(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func afterSave(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterSave = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func beforeInsert0(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func beforeInsert0(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallBeforeInsert0 = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func beforeInsert(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func beforeInsert(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallBeforeInsert = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func afterInsert(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func afterInsert(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterInsert = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func afterInsert0(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func afterInsert0(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterInsert0 = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func beforeDelete0(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func beforeDelete0(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallBeforeDelete0 = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func beforeDelete(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func beforeDelete(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallBeforeDelete = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func afterDelete0(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func afterDelete0(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterDelete0 = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
-        func afterDelete(within transaction: AnyTransaction?, on eventLoop: EventLoop) -> Future<Void> {
+        func afterDelete(
+            within transaction: AnyTransaction?,
+            on eventLoop: EventLoop
+        ) -> EventLoopFuture<Void> {
             self.didCallAfterDelete = true
-            return eventLoop.makeSucceededFuture()
+            return eventLoop.future
         }
 
         var ID: Identifier
@@ -239,11 +291,10 @@ final class Entita2Tests: XCTestCase {
 
     struct InvalidPackEntity: E2Entity {
         typealias Identifier = Int
-        typealias Storage = DummyStorage
 
+        static var storage: some Entita2Storage = Entita2Tests.storage
         static var fullEntityName: Bool = false
         static var format: E2.Format = .JSON
-        static var storage: Entita2Tests.DummyStorage = DummyStorage()
         static var IDKey: KeyPath<InvalidPackEntity, Identifier> = \.ID
 
         var ID: Identifier
@@ -270,10 +321,6 @@ final class Entita2Tests: XCTestCase {
         }
     }
 
-    func testMockBegin() throws {
-        XCTAssert(try TestEntity.begin(on: Self.eventLoop).wait() == nil)
-    }
-
     func testGetID() {
         let sampleEntity = TestEntity.sampleEntity
         let sampleSubEntity = sampleEntity.subEntity
@@ -284,12 +331,12 @@ final class Entita2Tests: XCTestCase {
     func testIDBytes() {
         let sampleEntity = TestEntity.sampleEntity
 
-        let sampleIDBytes = LGNCore.getBytes(sampleEntity.ID)
-        let sampleCustomIDBytes = LGNCore.getBytes(sampleEntity.subEntity.customID)
+        let sampleIDBytes = getBytes(sampleEntity.ID)
+        let sampleCustomIDBytes = getBytes(sampleEntity.subEntity.customID)
         XCTAssertEqual(sampleEntity.ID._bytes, sampleIDBytes)
         XCTAssertEqual(sampleEntity.subEntity.customID._bytes, sampleCustomIDBytes)
 
-        let prefix = LGNCore.getBytes("TestEntity:")
+        let prefix = getBytes("TestEntity:")
         XCTAssertEqual(TestEntity.IDBytesAsKey(bytes: [1,2,3]), prefix + [1,2,3])
         XCTAssertEqual(TestEntity.IDAsKey(ID: sampleEntity.ID), prefix + sampleIDBytes)
         XCTAssertEqual(sampleEntity.getIDAsKey(), prefix + sampleIDBytes)
@@ -324,7 +371,10 @@ final class Entita2Tests: XCTestCase {
     func testLoad() throws {
         let sampleEntity = TestEntity.sampleEntity
 
-        let loaded = try TestEntity.loadByRaw(IDBytes: sampleEntity.getIDAsKey(), on: Self.eventLoop).wait()
+        let loaded = try TestEntity.loadByRaw(
+            IDBytes: sampleEntity.getIDAsKey(),
+            on: Self.eventLoop
+        ).wait()
 
         XCTAssertEqual(loaded, sampleEntity)
 
@@ -412,7 +462,6 @@ final class Entita2Tests: XCTestCase {
 
     static var allTests = [
         ("testFormats", testFormats),
-        ("testMockBegin", testMockBegin),
         ("testGetID", testGetID),
         ("testIDBytes", testIDBytes),
         ("testUUIDID", testUUIDID),

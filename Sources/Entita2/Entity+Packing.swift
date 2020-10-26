@@ -1,9 +1,8 @@
 import Foundation
-import LGNCore
 import MessagePack
 
-public extension E2Entity {
-    init(from bytes: Bytes, format: E2.Format = Self.format) throws {
+public extension Entita2Entity {
+    init(from bytes: Bytes, format: Entita2.Format = Self.format) throws {
         let result: Self
         switch format {
         case .JSON: result = try JSONDecoder().decode(Self.self, from: Data(bytes))
@@ -12,7 +11,7 @@ public extension E2Entity {
         self = result
     }
 
-    func pack(to format: E2.Format = Self.format) throws -> Bytes {
+    func pack(to format: Entita2.Format = Self.format) throws -> Bytes {
         let result: Bytes
         switch format {
         case .JSON: result = try Bytes(JSONEncoder().encode(self))

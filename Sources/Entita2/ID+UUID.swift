@@ -1,11 +1,10 @@
 import Foundation
-import LGNCore
 
-public extension E2 {
+public extension Entita2 {
     typealias UUID = ID<Foundation.UUID>
 }
 
-public extension E2.ID where Value == UUID {
+public extension Entita2.ID where Value == UUID {
     var string: String {
         value.uuidString
     }
@@ -22,7 +21,7 @@ public extension E2.ID where Value == UUID {
     }
 }
 
-extension E2.ID: Codable where Value == UUID {
+extension Entita2.ID: Codable where Value == UUID {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         let result = try container.decode(Data.self)
@@ -32,7 +31,7 @@ extension E2.ID: Codable where Value == UUID {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
-        let bytes = LGNCore.getBytes(value)
+        let bytes = getBytes(value)
         try container.encode(Data(bytes))
     }
 }

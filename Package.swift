@@ -1,5 +1,4 @@
-// swift-tools-version:5.1
-// The swift-tools-version declares the minimum version of Swift required to build this package.
+// swift-tools-version:5.2
 
 import PackageDescription
 
@@ -10,11 +9,19 @@ let package = Package(
         .library(name: "Entita2", targets: ["Entita2"]),
     ],
     dependencies: [
-        .package(url: "git@github.com:kirilltitov/LGNKit-Swift.git", .branch("master")),
+        .package(url: "https://github.com/apple/swift-nio.git", from: "2.19.0"),
+        .package(url: "https://github.com/apple/swift-log.git", from: "1.0.0"),
         .package(url: "https://github.com/kirilltitov/MessagePack.git", .upToNextMajor(from: "2.0.0")),
     ],
     targets: [
-        .target(name: "Entita2", dependencies: ["LGNCore", "MessagePack"]),
+        .target(
+            name: "Entita2",
+            dependencies: [
+                .product(name: "NIO", package: "swift-nio"),
+                .product(name: "Logging", package: "swift-log"),
+                "MessagePack",
+            ]
+        ),
         .testTarget(name: "Entita2Tests", dependencies: ["Entita2"]),
     ]
 )
