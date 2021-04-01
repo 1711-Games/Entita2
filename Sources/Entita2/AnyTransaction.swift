@@ -1,7 +1,5 @@
-import NIO
-
 /// A very abstract transaction
-public protocol AnyTransaction {
+public protocol AnyTransaction: Sendable {
     /// Commits current transaction
-    func commit() -> EventLoopFuture<Void>
+    func commit() async throws
 }

@@ -1,31 +1,81 @@
 import Foundation
 import XCTest
-import NIO
 import MessagePack
 @testable import Entita2
 
+// A temporary polyfill for macOS dev
+// Taken from Linux impl https://github.com/apple/swift-corelibs-xctest/commit/38f9fa131e1b2823f3b3bfd97a1ac1fe69473d51
+// I expect this to be available in macOS in the nearest patch version of the language.
+// Actually, this is the only reason this RC isn't a release yet.
+// #if os(macOS)
+
+public func asyncTest<T: XCTestCase>(
+    _ testClosureGenerator: @escaping (T) -> () async throws -> Void
+) -> (T) -> () throws -> Void {
+    return { (testType: T) in
+        let testClosure = testClosureGenerator(testType)
+        return {
+            try awaitUsingExpectation(testClosure)
+        }
+    }
+}
+
+func awaitUsingExpectation(
+    _ closure: @escaping () async throws -> Void
+) throws -> Void {
+    let expectation = XCTestExpectation(description: "async test completion")
+    let thrownErrorWrapper = ThrownErrorWrapper()
+
+    Task {
+        defer { expectation.fulfill() }
+
+        do {
+            try await closure()
+        } catch {
+            thrownErrorWrapper.error = error
+        }
+    }
+
+    _ = XCTWaiter.wait(for: [expectation], timeout: 60 * 60 * 24 * 30)
+
+    if let error = thrownErrorWrapper.error {
+        throw error
+    }
+}
+
+private final class ThrownErrorWrapper: @unchecked Sendable {
+
+    private var _error: Error?
+
+    var error: Error? {
+        get {
+            Entita2Tests.subsystemQueue.sync { _error }
+        }
+        set {
+            Entita2Tests.subsystemQueue.sync { _error = newValue }
+        }
+    }
+}
+
+// #endif
+
 final class Entita2Tests: XCTestCase {
-    static var eventLoop = EmbeddedEventLoop()
+    internal static let subsystemQueue = DispatchQueue(label: "org.swift.XCTest.XCTWaiter.TEMPORARY")
+
     static let storage = DummyStorage()
 
     struct DummyStorage: E2Storage {
         struct Transaction: AnyTransaction {
-            let eventLoop: EventLoop
-
-            func commit() -> EventLoopFuture<Void> {
-                eventLoop.future
+            func commit() async throws {
+                // noop
             }
         }
 
-        func begin(on eventLoop: EventLoop) -> EventLoopFuture<AnyTransaction> {
-            eventLoop.makeSucceededFuture(Transaction(eventLoop: eventLoop))
+        func begin() throws -> AnyTransaction {
+            Transaction()
         }
 
-        func load(
-            by key: Bytes,
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Bytes?> {
+        func load(by key: Bytes, within transaction: AnyTransaction?) async throws -> Bytes? {
             let result: Bytes?
 
             switch key {
@@ -60,24 +110,22 @@ final class Entita2Tests: XCTestCase {
                 result = nil
             }
 
-            return eventLoop.makeSucceededFuture(result)
+            return result
         }
 
         func save(
             bytes: Bytes,
             by key: Bytes,
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
-            return eventLoop.makeSucceededFuture(Void())
+            within transaction: AnyTransaction?
+        ) async throws {
+            // noop
         }
 
         func delete(
             by key: Bytes,
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
-            return eventLoop.makeSucceededFuture(Void())
+            within transaction: AnyTransaction?
+        ) async throws {
+            // noop
         }
     }
 
@@ -151,115 +199,61 @@ final class Entita2Tests: XCTestCase {
         var didCallAfterDelete: Bool = false
 
         public func afterLoad0(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+            within transaction: AnyTransaction?
+        ) async throws {
             self.didCallAfterLoad0 = true
-            return eventLoop.future
         }
 
-        public func afterLoad(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        public func afterLoad(within transaction: AnyTransaction?) async throws {
             self.didCallAfterLoad = true
-            return eventLoop.future
         }
 
-        func beforeSave0(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func beforeSave0(within transaction: AnyTransaction?) async throws {
             self.didCallBeforeSave0 = true
-            return eventLoop.future
         }
 
-        func beforeSave(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func beforeSave(within transaction: AnyTransaction?) async throws {
             self.didCallBeforeSave = true
-            return eventLoop.future
         }
 
-        func afterSave0(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func afterSave0(within transaction: AnyTransaction?) async throws {
             self.didCallAfterSave0 = true
-            return eventLoop.future
         }
 
-        func afterSave(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func afterSave(within transaction: AnyTransaction?) async throws {
             self.didCallAfterSave = true
-            return eventLoop.future
         }
 
-        func beforeInsert0(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func beforeInsert0(within transaction: AnyTransaction?) async throws {
             self.didCallBeforeInsert0 = true
-            return eventLoop.future
         }
 
-        func beforeInsert(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func beforeInsert(within transaction: AnyTransaction?) async throws {
             self.didCallBeforeInsert = true
-            return eventLoop.future
         }
 
-        func afterInsert(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func afterInsert(within transaction: AnyTransaction?) async throws {
             self.didCallAfterInsert = true
-            return eventLoop.future
         }
 
-        func afterInsert0(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func afterInsert0(within transaction: AnyTransaction?) async throws {
             self.didCallAfterInsert0 = true
-            return eventLoop.future
         }
 
-        func beforeDelete0(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func beforeDelete0(within transaction: AnyTransaction?) async throws {
             self.didCallBeforeDelete0 = true
-            return eventLoop.future
         }
 
-        func beforeDelete(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func beforeDelete(within transaction: AnyTransaction?) async throws {
             self.didCallBeforeDelete = true
-            return eventLoop.future
         }
 
-        func afterDelete0(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func afterDelete0(within transaction: AnyTransaction?) async throws {
             self.didCallAfterDelete0 = true
-            return eventLoop.future
         }
 
-        func afterDelete(
-            within transaction: AnyTransaction?,
-            on eventLoop: EventLoop
-        ) -> EventLoopFuture<Void> {
+        func afterDelete(within transaction: AnyTransaction?) async throws {
             self.didCallAfterDelete = true
-            return eventLoop.future
         }
 
         var ID: Identifier
@@ -358,69 +352,57 @@ final class Entita2Tests: XCTestCase {
         TestEntity.SubEntity.fullEntityName = false
     }
 
-    func testGetPackedSelf() {
-        let future1 = TestEntity.sampleEntity.getPackedSelf(on: Self.eventLoop)
-        let future2 = InvalidPackEntity(ID: 1).getPackedSelf(on: Self.eventLoop)
+    func testGetPackedSelf() throws {
+        _ = try TestEntity.sampleEntity.getPackedSelf()
 
-        Self.eventLoop.run()
-
-        XCTAssertNoThrow(try future1.wait())
-        XCTAssertThrowsError(try future2.wait())
+        do {
+            _ = try InvalidPackEntity(ID: 1).getPackedSelf()
+            XCTFail("Should've thrown")
+        } catch {}
     }
 
-    func testLoad() throws {
+    func testLoad() async throws {
         let sampleEntity = TestEntity.sampleEntity
 
-        let loaded = try TestEntity.loadByRaw(
-            IDBytes: sampleEntity.getIDAsKey(),
-            on: Self.eventLoop
-        ).wait()
+        let loaded = try await TestEntity.loadByRaw(IDBytes: sampleEntity.getIDAsKey())
 
         XCTAssertEqual(loaded, sampleEntity)
 
         XCTAssertTrue(loaded!.didCallAfterLoad)
         XCTAssertTrue(loaded!.didCallAfterLoad0)
 
-        XCTAssertEqual(
-            try TestEntity.loadBy(IDBytes: sampleEntity.ID._bytes, on: Self.eventLoop).wait(),
-            sampleEntity
-        )
-        XCTAssertEqual(
-            try TestEntity.load(by: sampleEntity.ID, on: Self.eventLoop).wait(),
-            sampleEntity
-        )
+        let actual1 = try await TestEntity.loadBy(IDBytes: sampleEntity.ID._bytes)
+        XCTAssertEqual(actual1, sampleEntity)
 
-        XCTAssertEqual(
-            try TestEntity.loadByRaw(IDBytes: [1, 2, 3], on: Self.eventLoop).wait(),
-            nil
-        )
+        let actual2 = try await TestEntity.load(by: sampleEntity.ID)
+        XCTAssertEqual(actual2, sampleEntity)
 
-        XCTAssertThrowsError(
-            try TestEntity.loadByRaw(IDBytes: [0], on: Self.eventLoop).wait()
-        )
+        let actual3 = try await TestEntity.loadByRaw(IDBytes: [1, 2, 3])
+        XCTAssertEqual(actual3, nil)
+
+        do {
+            _ = try await TestEntity.loadByRaw(IDBytes: [0])
+            XCTFail("Should've thrown")
+        } catch {}
+
         TestEntity.format = .MsgPack
-        XCTAssertThrowsError(
-            try TestEntity.loadByRaw(IDBytes: [0], on: Self.eventLoop).wait()
-        )
-        TestEntity.format = .JSON
+        do {
+            _ = try await TestEntity.loadByRaw(IDBytes: [0])
+            XCTFail("Should've thrown")
+        } catch {}
 
-        let loadedSubEntity = try TestEntity.SubEntity
-            .loadByRaw(IDBytes: sampleEntity.subEntity.getIDAsKey(), on: Self.eventLoop)
-            .wait()
+        TestEntity.format = .JSON
+        let loadedSubEntity = try await TestEntity.SubEntity.loadByRaw(IDBytes: sampleEntity.subEntity.getIDAsKey())
         XCTAssertEqual(loadedSubEntity, sampleEntity.subEntity)
     }
 
-    func testSave() throws {
+    func testSave() async throws {
         let sampleEntity = TestEntity.sampleEntity
         let sampleSubEntity = TestEntity.sampleEntity.subEntity
 
-        let future1 = sampleEntity.save(commit: true, on: Self.eventLoop)
-        let future2 = sampleSubEntity.save(commit: true, on: Self.eventLoop)
-        let future3 = sampleEntity.save(by: sampleEntity.ID, commit: true, on: Self.eventLoop)
-        Self.eventLoop.run()
-        XCTAssertNoThrow(try future1.wait())
-        XCTAssertNoThrow(try future2.wait())
-        XCTAssertNoThrow(try future3.wait())
+        try await sampleEntity.save(commit: true)
+        try await sampleSubEntity.save(commit: true)
+        try await sampleEntity.save(by: sampleEntity.ID, commit: true)
 
         XCTAssertTrue(sampleEntity.didCallBeforeSave0)
         XCTAssertTrue(sampleEntity.didCallBeforeSave)
@@ -428,15 +410,15 @@ final class Entita2Tests: XCTestCase {
         XCTAssertTrue(sampleEntity.didCallAfterSave0)
     }
 
-    func testInsert() throws {
+    func testInsert() async throws {
         let sampleEntity = TestEntity.sampleEntity
         let sampleSubEntity = TestEntity.sampleEntity.subEntity
 
-        let future1 = sampleEntity.insert(commit: true, on: Self.eventLoop)
-        let future2 = sampleSubEntity.insert(on: Self.eventLoop)
-        Self.eventLoop.run()
-        XCTAssertNoThrow(try future1.wait())
-        XCTAssertNoThrow(try future2.wait())
+        try await sampleEntity.insert(commit: true)
+        try await sampleSubEntity.insert()
+
+        let transaction = try Self.storage.begin()
+        try await sampleEntity.insert(within: transaction, commit: true)
 
         XCTAssertTrue(sampleEntity.didCallBeforeInsert0)
         XCTAssertTrue(sampleEntity.didCallBeforeInsert)
@@ -444,32 +426,16 @@ final class Entita2Tests: XCTestCase {
         XCTAssertTrue(sampleEntity.didCallAfterInsert0)
     }
 
-    func testDelete() throws {
+    func testDelete() async throws {
         let sampleEntity = TestEntity.sampleEntity
         let sampleSubEntity = TestEntity.sampleEntity.subEntity
 
-        let future1 = sampleEntity.delete(commit: true, on: Self.eventLoop)
-        let future2 = sampleSubEntity.delete(commit: false, on: Self.eventLoop)
-        Self.eventLoop.run()
-        XCTAssertNoThrow(try future1.wait())
-        XCTAssertNoThrow(try future2.wait())
+        try await sampleEntity.delete(commit: true)
+        try await sampleSubEntity.delete(commit: false)
 
         XCTAssertTrue(sampleEntity.didCallBeforeDelete0)
         XCTAssertTrue(sampleEntity.didCallBeforeDelete)
         XCTAssertTrue(sampleEntity.didCallAfterDelete)
         XCTAssertTrue(sampleEntity.didCallAfterDelete0)
     }
-
-    static var allTests = [
-        ("testFormats", testFormats),
-        ("testGetID", testGetID),
-        ("testIDBytes", testIDBytes),
-        ("testUUIDID", testUUIDID),
-        ("testEntityName", testEntityName),
-        ("testGetPackedSelf", testGetPackedSelf),
-        ("testLoad", testLoad),
-        ("testSave", testSave),
-        ("testInsert", testInsert),
-        ("testDelete", testDelete),
-    ]
 }
