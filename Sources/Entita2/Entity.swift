@@ -1,5 +1,3 @@
-import NIO
-
 public extension Entita2 {
     /// Serialization format
     enum Format: String, CaseIterable {
@@ -47,168 +45,90 @@ public protocol Entita2Entity: Codable {
     func pack(to format: Entita2.Format) throws -> Bytes
 
     /// Tries to load an entity from storage by given ID
-    static func load(
-        by ID: Identifier,
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Self?>
+    static func load(by ID: Identifier, within transaction: AnyTransaction?) async throws -> Self?
 
     /// Tries to load an entity from storage by given ID bytes within given transaction
-    static func loadBy(
-        IDBytes: Bytes,
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Self?>
+    static func loadBy(IDBytes: Bytes, within transaction: AnyTransaction?) async throws -> Self?
 
     /// Tries to load an entity from storage by given ID raw bytes within given transaction.
     /// For details and format of raw ID see `Self.IDBytesAsKey`
-    static func loadByRaw(
-        IDBytes: Bytes,
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Self?>
+    static func loadByRaw(IDBytes: Bytes, within transaction: AnyTransaction?) async throws -> Self?
 
     /// Executes some system routines after successful entity load.
     /// Do not define or execute this method, instead go for `afterLoad`
-    func afterLoad0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterLoad0(within transaction: AnyTransaction?) async throws
 
     /// Executes some routines after successful entity load.
     /// You may define this method in order to implement custom logic
-    func afterLoad(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterLoad(within transaction: AnyTransaction?) async throws
 
     /// Same as `save`, but with executes `beforeInsert` and `afterInsert` before and after insert respectively.
-    func insert(
-        within transaction: AnyTransaction?,
-        commit: Bool,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func insert(within transaction: AnyTransaction?, commit: Bool) async throws
 
     /// Saves current entity to storage and optionally commits current transaction if possible
-    func save(
-        within transaction: AnyTransaction?,
-        commit: Bool,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func save(within transaction: AnyTransaction?, commit: Bool) async throws
 
     /// Saves current entity to storage by given identifier and optionally commits current transaction if possible
-    func save(
-        by ID: Identifier?,
-        within transaction: AnyTransaction?,
-        commit: Bool,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func save(by ID: Identifier?, within transaction: AnyTransaction?, commit: Bool) async throws
 
     /// Deletes current entity from storage and optionally commits current transaction if possible
-    func delete(
-        within transaction: AnyTransaction?,
-        commit: Bool,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func delete(within transaction: AnyTransaction?, commit: Bool) async throws
     
     /// Executes some system routines for saving the entity to storage
     /// Do not define or execute this method
-    func save0(
-        by ID: Identifier?,
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func save0(by ID: Identifier?, within transaction: AnyTransaction?) async throws
 
     /// Executes some system routines for deleting the entity from the storage
     /// Do not define or execute this method
-    func delete0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func delete0(within transaction: AnyTransaction?) async throws
 
     /// Executes some system routines before inserting an entity.
     /// Do not define or execute this method
-    func beforeInsert0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func beforeInsert0(within transaction: AnyTransaction?) async throws
 
     /// Executes some routines before inserting an entity.
     /// Do execute this method
-    func beforeInsert(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func beforeInsert(within transaction: AnyTransaction?) async throws
 
     /// Executes some routines after inserting an entity.
     /// Do execute this method
-    func afterInsert(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterInsert(within transaction: AnyTransaction?) async throws
 
     /// Executes some system routines after inserting an entity.
     /// Do not define or execute this method
-    func afterInsert0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterInsert0(within transaction: AnyTransaction?) async throws
 
     /// Executes some system routines before saving an entity.
     /// Do not define or execute this method
-    func beforeSave0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func beforeSave0(within transaction: AnyTransaction?) async throws
 
     /// Executes some routines before saving an entity.
     /// Do not execute this method
-    func beforeSave(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func beforeSave(within transaction: AnyTransaction?) async throws
 
     /// Executes some routines after saving an entity.
     /// Do not execute this method
-    func afterSave(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterSave(within transaction: AnyTransaction?) async throws
 
     /// Executes some system routines after saving an entity.
     /// Do not define or execute this method
-    func afterSave0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterSave0(within transaction: AnyTransaction?) async throws
 
     /// Executes some system routines before deleting an entity.
     /// Do not define or execute this method
-    func beforeDelete0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func beforeDelete0(within transaction: AnyTransaction?) async throws
 
     /// Executes some routines before deleting an entity.
     /// Do not execute this method
-    func beforeDelete(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func beforeDelete(within transaction: AnyTransaction?) async throws
 
     /// Executes some routines after deleting an entity.
     /// Do not execute this method
-    func afterDelete(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterDelete(within transaction: AnyTransaction?) async throws
 
     /// Executes some system routines after deleting an entity.
     /// Do not define or execute this method
-    func afterDelete0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void>
+    func afterDelete0(within transaction: AnyTransaction?) async throws
 
     /// Returns an ID of current entity
     func getID() -> Identifier

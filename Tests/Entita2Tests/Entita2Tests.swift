@@ -1,6 +1,5 @@
 import Foundation
 import XCTest
-import NIO
 import MessagePack
 @testable import Entita2
 
