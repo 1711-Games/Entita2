@@ -1,4 +1,4 @@
-import Foundation.NSUUID
+import Foundation
 
 public extension Entita2 {
     typealias UUID = ID<Foundation.UUID>
