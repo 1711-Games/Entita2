@@ -1,0 +1,19 @@
+name: Entita2
+
+on:
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 4
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run tests
+      run: |
+        eval "$(curl -sL https://swiftenv.fuller.li/install.sh)"
+        swift test

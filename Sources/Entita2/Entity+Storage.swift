@@ -1,5 +1,3 @@
-import NIO
-
 public extension Entita2Entity {
     /// Defines whether full name for ID should be full or short
     /// Defaults to `false` (hence short)
@@ -26,177 +24,67 @@ public extension Entita2Entity {
         Self.IDAsKey(ID: getID())
     }
 
-    static func loadBy(
-        IDBytes: Bytes,
-        within transaction: AnyTransaction? = nil,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Self?> {
-        Self.loadByRaw(
-            IDBytes: Self.IDBytesAsKey(bytes: IDBytes),
-            on: eventLoop
+    static func loadBy(IDBytes: Bytes, within transaction: AnyTransaction? = nil) async throws -> Self? {
+        try await Self.loadByRaw(
+            IDBytes: Self.IDBytesAsKey(bytes: IDBytes)
         )
     }
 
-    static func loadByRaw(
-        IDBytes: Bytes,
-        within transaction: AnyTransaction? = nil,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Self?> {
-        self.storage
-            .load(by: IDBytes, within: transaction, on: eventLoop)
-            .flatMap { self.afterLoadRoutines0(maybeBytes: $0, within: transaction, on: eventLoop) }
+    static func loadByRaw(IDBytes: Bytes, within transaction: AnyTransaction? = nil) async throws -> Self? {
+        return try await self.afterLoadRoutines0(
+            maybeBytes: try await self.storage.load(by: IDBytes, within: transaction),
+            within: transaction
+        )
     }
 
-    static func load(
-        by ID: Identifier,
-        within transaction: AnyTransaction? = nil,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Self?> {
-        Self.loadByRaw(IDBytes: Self.IDAsKey(ID: ID), within: transaction, on: eventLoop)
+    static func load(by ID: Identifier, within transaction: AnyTransaction? = nil) async throws -> Self? {
+        try await Self.loadByRaw(IDBytes: Self.IDAsKey(ID: ID), within: transaction)
     }
 
-    static func afterLoadRoutines0(
-        maybeBytes: Bytes?,
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Self?> {
+    static func afterLoadRoutines0(maybeBytes: Bytes?, within transaction: AnyTransaction?) async throws -> Self? {
         guard let bytes = maybeBytes else {
-            return eventLoop.makeSucceededFuture(nil)
+            return nil
         }
-        let entity: Self
-        do {
-            entity = try Self(from: bytes, format: Self.format)
-        } catch {
-            return eventLoop.makeFailedFuture(error)
-        }
+
+        let entity: Self = try Self(from: bytes, format: Self.format)
+
+        try await entity.afterLoad0(within: transaction)
+        try await entity.afterLoad(within: transaction)
+
         return entity
-            .afterLoad0(within: transaction, on: eventLoop)
-            .flatMap { entity.afterLoad(within: transaction, on: eventLoop) }
-            .map { _ in entity }
     }
 
-    func afterLoad0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
+    func afterLoad0(within transaction: AnyTransaction?) async throws {}
+    func afterLoad(within transaction: AnyTransaction?) async throws {}
+    func beforeSave0(within transaction: AnyTransaction?) async throws {}
+    func beforeSave(within transaction: AnyTransaction?) async throws {}
+    func afterSave0(within transaction: AnyTransaction?) async throws {}
+    func afterSave(within transaction: AnyTransaction?) async throws {}
+    func beforeInsert0(within transaction: AnyTransaction?) async throws {}
+    func beforeInsert(within transaction: AnyTransaction?) async throws {}
+    func afterInsert(within transaction: AnyTransaction?) async throws {}
+    func afterInsert0(within transaction: AnyTransaction?) async throws {}
+    func beforeDelete0(within transaction: AnyTransaction?) async throws {}
+    func beforeDelete(within transaction: AnyTransaction?) async throws {}
+    func afterDelete0(within transaction: AnyTransaction?) async throws {}
+    func afterDelete(within transaction: AnyTransaction?) async throws {}
 
-    func afterLoad(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
+    func getPackedSelf() throws -> Bytes {
+        let result: Bytes
 
-    func beforeSave0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func beforeSave(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func afterSave0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func afterSave(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func beforeInsert0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func beforeInsert(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func afterInsert(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func afterInsert0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func beforeDelete0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func beforeDelete(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func afterDelete0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    func afterDelete(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        eventLoop.future
-    }
-
-    /// Though this method isn't actually asynchronous,
-    /// it's deliberately stated as `EventLoopFuture<Bytes>` to get rid of `throws` keyword
-    func getPackedSelf(on eventLoop: EventLoop) -> EventLoopFuture<Bytes> {
-        return eventLoop.submit {
-            let result: Bytes
-
-            do {
-                result = try self.pack(to: Self.format)
-            } catch {
-                throw Entita2.E.SaveError("Could not save entity: \(error)")
-            }
-
-            return result
+        do {
+            result = try self.pack(to: Self.format)
+        } catch {
+            throw Entita2.E.SaveError("Could not save entity: \(error)")
         }
+
+        return result
     }
 
     //MARK: - Public 0-methods
     
     /// This method is not intended to be used directly. Use `save()` method.
-    func save0(
-        by ID: Identifier? = nil,
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
+    func save0(by ID: Identifier? = nil, within transaction: AnyTransaction?) async throws {
         let IDBytes: Bytes
         if let ID = ID {
             IDBytes = Self.IDAsKey(ID: ID)
@@ -204,125 +92,80 @@ public extension Entita2Entity {
             IDBytes = self.getIDAsKey()
         }
 
-        return self
-            .getPackedSelf(on: eventLoop)
-            .flatMap { payload in
-                Self.storage.save(
-                    bytes: payload,
-                    by: IDBytes,
-                    within: transaction,
-                    on: eventLoop
-                )
-            }
+        return try await Self.storage.save(
+            bytes: self.getPackedSelf(),
+            by: IDBytes,
+            within: transaction
+        )
     }
 
     /// This method is not intended to be used directly. Use `save()` method.
-    func delete0(
-        within transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        Self.storage.delete(
+    func delete0(within transaction: AnyTransaction?) async throws {
+        try await Self.storage.delete(
             by: self.getIDAsKey(),
-            within: transaction,
-            on: eventLoop
+            within: transaction
         )
     }
 
     /// This method is not intended to be used directly
-    func commit0(transaction: AnyTransaction?, on eventLoop: EventLoop) -> EventLoopFuture<Void> {
-        return transaction?.commit() ?? eventLoop.makeSucceededFuture(())
+    func commit0(transaction: AnyTransaction?) async throws {
+        try await transaction?.commit()
     }
 
-    internal func commit0IfNecessary(
-        commit: Bool,
-        transaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        commit
-            ? self.commit0(transaction: transaction, on: eventLoop)
-            : eventLoop.future
+    internal func commit0IfNecessary(commit: Bool, transaction: AnyTransaction?) async throws {
+        if commit  {
+            try await self.commit0(transaction: transaction)
+        }
     }
 
     @usableFromInline
-    internal static func unwrapAnyTransactionOrBegin(
-        _ anyTransaction: AnyTransaction?,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<AnyTransaction> {
-        eventLoop.future
-            .flatMap {
-                if let transaction = anyTransaction {
-                    return eventLoop.makeSucceededFuture(transaction)
-                }
-                return Self.storage.begin(on: eventLoop)
-            }
+    internal static func unwrapAnyTransactionOrBegin(_ anyTransaction: AnyTransaction?) async throws -> AnyTransaction {
+        if let transaction = anyTransaction {
+            return transaction
+        }
+        return try await Self.storage.begin()
     }
 
     // MARK: - Public CRUD methods
 
     /// Inserts current entity to DB within given transaction
-    func insert(
-        within transaction: AnyTransaction? = nil,
-        commit: Bool = true,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        Self
-            .unwrapAnyTransactionOrBegin(transaction, on: eventLoop)
-            .flatMap { tr in
-                eventLoop.future
-                    .flatMap { self.beforeInsert0(within: tr, on: eventLoop) }
-                    .flatMap { self.beforeInsert(within: tr, on: eventLoop) }
-                    .flatMap { self.save0(by: nil, within: tr, on: eventLoop) }
-                    .flatMap { self.afterInsert0(within: tr, on: eventLoop) }
-                    .flatMap { self.afterInsert(within: tr, on: eventLoop) }
-                    .flatMap { self.commit0IfNecessary(commit: commit, transaction: tr, on: eventLoop) }
-            }
+    func insert(within transaction: AnyTransaction? = nil, commit: Bool = true) async throws {
+        let transaction = try await Self.unwrapAnyTransactionOrBegin(transaction)
+        
+        try await self.beforeInsert0(within: transaction)
+        try await self.beforeInsert(within: transaction)
+        try await self.save0(by: nil, within: transaction)
+        try await self.afterInsert0(within: transaction)
+        try await self.afterInsert(within: transaction)
+        try await self.commit0IfNecessary(commit: commit, transaction: transaction)
     }
 
     /// Saves current entity to DB
-    func save(
-        within transaction: AnyTransaction? = nil,
-        commit: Bool = true,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        self.save(by: nil, within: transaction, commit: commit, on: eventLoop)
+    func save(within transaction: AnyTransaction? = nil, commit: Bool = true) async throws {
+        try await self.save(by: nil, within: transaction, commit: commit)
     }
 
     /// Saves current entity to DB within given transaction
-    func save(
-        by ID: Identifier? = nil,
-        within transaction: AnyTransaction? = nil,
-        commit: Bool = true,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        Self
-            .unwrapAnyTransactionOrBegin(transaction, on: eventLoop)
-            .flatMap { tr in
-                eventLoop.future
-                    .flatMap { self.beforeSave0(within: tr, on: eventLoop) }
-                    .flatMap { self.beforeSave(within: tr, on: eventLoop) }
-                    .flatMap { self.save0(by: ID, within: tr, on: eventLoop) }
-                    .flatMap { self.afterSave0(within: tr, on: eventLoop) }
-                    .flatMap { self.afterSave(within: tr, on: eventLoop) }
-                    .flatMap { self.commit0IfNecessary(commit: commit, transaction: tr, on: eventLoop) }
-            }
+    func save(by ID: Identifier? = nil, within transaction: AnyTransaction? = nil, commit: Bool = true) async throws {
+        let transaction = try await Self.unwrapAnyTransactionOrBegin(transaction)
+
+        try await self.beforeSave0(within: transaction)
+        try await self.beforeSave(within: transaction)
+        try await self.save0(by: ID, within: transaction)
+        try await self.afterSave0(within: transaction)
+        try await self.afterSave(within: transaction)
+        try await self.commit0IfNecessary(commit: commit, transaction: transaction)
     }
 
     /// Deletes current entity from DB within given transaction
-    func delete(
-        within transaction: AnyTransaction? = nil,
-        commit: Bool = true,
-        on eventLoop: EventLoop
-    ) -> EventLoopFuture<Void> {
-        Self
-            .unwrapAnyTransactionOrBegin(transaction, on: eventLoop)
-            .flatMap { tr in
-                eventLoop.future
-                    .flatMap { self.beforeDelete0(within: tr, on: eventLoop) }
-                    .flatMap { self.beforeDelete(within: tr, on: eventLoop) }
-                    .flatMap { self.delete0(within: tr, on: eventLoop) }
-                    .flatMap { self.afterDelete0(within: tr, on: eventLoop) }
-                    .flatMap { self.afterDelete(within: tr, on: eventLoop) }
-                    .flatMap { self.commit0IfNecessary(commit: commit, transaction: tr, on: eventLoop) }
-            }
+    func delete(within transaction: AnyTransaction? = nil, commit: Bool = true) async throws {
+        let transaction = try await Self.unwrapAnyTransactionOrBegin(transaction)
+
+        try await self.beforeDelete0(within: transaction)
+        try await self.beforeDelete(within: transaction)
+        try await self.delete0(within: transaction)
+        try await self.afterDelete0(within: transaction)
+        try await self.afterDelete(within: transaction)
+        try await self.commit0IfNecessary(commit: commit, transaction: transaction)
     }
 }

@@ -1,6 +1,6 @@
 # Entita2
 
-Entita2 is a simple Swift-NIO-powered ORM for working with NoSQL DBs. This particular package contains basic abstractions
+Entita2 is a simple ORM for working with NoSQL DBs. This particular package contains basic abstractions
 (without any particular DB connections). Currently the only concrete DB implementation is
 [Entita2FDB](https://github.com/1711-Games/Entita2FDB) which works with
 FoundationDB (a highly distributed transactional NoSQL DB by Apple).
@@ -8,7 +8,7 @@ FoundationDB (a highly distributed transactional NoSQL DB by Apple).
 ## Entity definition
 
 ```swift
-import struct Foundation.Date
+import struct Foundation
 import Entita2
 
 let storage: SomeStorage = someStorageReference
@@ -45,23 +45,24 @@ final class User: E2Entity {
 }
 ```
 
-NB: Every `Entita2`-prefixed definition has a `E2`-prefixed typealias: `Entita2` >> `E2`, `Entita2Entity` >> `E2Entity` etc.
+NB: Every `Entita2`-prefixed definition has a `E2`-prefixed typealias:
+`Entita2` >> `E2`, `Entita2Entity` >> `E2Entity` etc.
 
-This snippet defines an entity `User` with an UUID identifier (identifiers can be anything, including `Int`, of course) and a few more 
-properties. Under the hood Entita2 utilizes `Codable` protocol, so every property must conform to it. The entity is packed using JSON
-format (other option is MessagePack). ID property can be named anything, and therefore a KeyPath should be provided to this property.
+This snippet defines an entity `User` with an UUID identifier (identifiers can be anything, including `Int`, of course)
+and a few more properties. Under the hood Entita2 utilizes `Codable` protocol, so every property must conform to it.
+The entity is packed using JSON format (other option is MessagePack). ID property can be named anything,
+and therefore a KeyPath should be provided to this property.
 
 ## CRUD
 
 Loading a record from DB:
+
 ```swift
-let maybeUserFuture: EventLoopFuture<User?> = User.load(
-    by: E2.UUID("9C0FDD1C-FE56-4598-A037-177362DBD3D2")!,
-    on: eventLoop
-)
+try await User.load(by: E2.UUID("9C0FDD1C-FE56-4598-A037-177362DBD3D2")!)
 ```
 
 Creating a new record:
+
 ```swift
 let newUser = User(
     username: "17:11 Teo",
@@ -69,34 +70,30 @@ let newUser = User(
     email: "teo@1711.games",
     dateSignup: Date()
 )
-let insertFuture: EventLoopFuture<Void> = newUser.insert(
-    storage: storageInstance,
-    on: eventLoop
-)
+try await newUser.insert(storage: storageInstance)
 ```
 
-Updating existing record
+Updating an existing record:
+
 ```swift
 user.dateLogin = Date()
 
-let saveFuture: EventLoopFuture<Void> = user.save(on: eventLoop)
+try await user.save()
 ```
 
- Deleting a record:
- ```swift
- let deleteFuture: EventLoopFuture<Void> = user.delete(on: eventLoop)
- ```
+Deleting a record:
+
+```swift
+try await user.delete()
+```
 
 ## Pre/after operation hooks
 
-If you want to perform some actions before or after any CRUD operation, you may define a method
-of a following signature in your entity:
+If you want to perform some actions before or after any CRUD operation, you may define a method of a following signature
+in your entity:
 
 ```swift
-func afterLoad(
-    within transaction: AnyTransaction?,
-    on eventLoop: EventLoop
-) -> EventLoopFuture<Void>
+func afterLoad(within transaction: AnyTransaction?) async throws
 ```
 
 There are seven methods of such kind (including `afterLoad`, but not `beforeLoad`, because it's nonsense):
@@ -114,8 +111,9 @@ afterDelete
 
 You may define any of theese methods, but you should not execute them manualy.
 
-Additionally, there are siblings of these methods with `0` suffix (`beforeInsert0` etc), which are for Entita2 extensions like
-[Entita2FDB](https://github.com/1711-Games/Entita2FDB), you should not define (nor execute) them in your entities.
+Additionally, there are siblings of these methods with `0` suffix (`beforeInsert0` etc), which are for Entita2
+extensions like [Entita2FDB](https://github.com/1711-Games/Entita2FDB), you should not define (nor execute) them in
+your entities.
 
 Order of execution of these methods is as follows:
 
@@ -138,43 +136,35 @@ It requires four methods:
 
 ```swift
 /// Begins a transaction if `Storage` is transactional
-func begin(on eventLoop: EventLoop) -> EventLoopFuture<AnyTransaction>
+func begin() async throws -> AnyTransaction
 
 /// Tries to load bytes from storage for given key within a transaction
-func load(
-    by key: Bytes,
-    within transaction: AnyTransaction?,
-    on eventLoop: EventLoop
-) -> EventLoopFuture<Bytes?>
+func load(by key: Bytes, within transaction: AnyTransaction?) async throws -> Bytes?
 
 /// Saves given bytes at given key within a transaction
 func save(
     bytes: Bytes,
     by key: Bytes,
-    within transaction: AnyTransaction?,
-    on eventLoop: EventLoop
-) -> EventLoopFuture<Void>
+    within transaction: AnyTransaction?
+) async throws
 
 /// Deletes a given key (and value) from storage within a transaction
-func delete(
-    by key: Bytes,
-    within transaction: AnyTransaction?,
-    on eventLoop: EventLoop
-) -> EventLoopFuture<Void>
+func delete(by key: Bytes, within transaction: AnyTransaction?) async throws
 ```
 
 `AnyTransaction` is a protocol for a transaction, it has to have just one method:
 
 ```swift
-func commit() -> EventLoopFuture<Void>
+func commit() async throws
 ```
 
-If your DB is not transactional, create a dummy `commit` method to just return `EventLoopFuture<Void>`.
+If your DB is not transactional, create a dummy `commit` method that would do nothing.
 
 ## Transactions
 
-If your DB is transactional, you might want to utilize transactions. First you create a transaction with `storage.begin()`,
-then you pass it to every CRUD method (otherwise transaction will be started automatically for any CRUD operation). The rest is up to DB.
+If your DB is transactional, you might want to utilize transactions. First you create a transaction with
+`storage.begin()`, then you pass it to every CRUD method (otherwise transaction will be started automatically for
+any CRUD operation). The rest is up to DB.
 
 ## FAQ
 
@@ -186,7 +176,7 @@ However, it's quite low-level and is probably not of much use for broad public.
 
 ### Why is `Storage` injected into static class instead of passing to individual dynamic CRUD methods?
 
-We have considered this [Fluent-inspired] approach, but upon thorough production testing we decided that it is too cumbersome.
-We understand that community prefers more safe approach with dependency container being passed
+We have considered this [Fluent-inspired] approach, but upon thorough production testing we decided that it is too
+cumbersome. We understand that community prefers more safe approach with dependency container being passed
 (like `request` in Vapor) to each request, but we weren't aiming for a specific framework while developing this ORM
 (actually we _were_ at some point, but we've committed some serious efforts to make it framework-agnostic).
