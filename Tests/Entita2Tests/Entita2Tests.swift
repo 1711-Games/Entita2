@@ -1,67 +1,9 @@
-import Foundation
-import XCTest
-import MessagePack
 @testable import Entita2
-
-// A temporary polyfill for macOS dev
-// Taken from Linux impl https://github.com/apple/swift-corelibs-xctest/commit/38f9fa131e1b2823f3b3bfd97a1ac1fe69473d51
-// I expect this to be available in macOS in the nearest patch version of the language.
-// Actually, this is the only reason this RC isn't a release yet.
-// #if os(macOS)
-
-public func asyncTest<T: XCTestCase>(
-    _ testClosureGenerator: @escaping (T) -> () async throws -> Void
-) -> (T) -> () throws -> Void {
-    return { (testType: T) in
-        let testClosure = testClosureGenerator(testType)
-        return {
-            try awaitUsingExpectation(testClosure)
-        }
-    }
-}
-
-func awaitUsingExpectation(
-    _ closure: @escaping () async throws -> Void
-) throws -> Void {
-    let expectation = XCTestExpectation(description: "async test completion")
-    let thrownErrorWrapper = ThrownErrorWrapper()
-
-    Task {
-        defer { expectation.fulfill() }
-
-        do {
-            try await closure()
-        } catch {
-            thrownErrorWrapper.error = error
-        }
-    }
-
-    _ = XCTWaiter.wait(for: [expectation], timeout: 60 * 60 * 24 * 30)
-
-    if let error = thrownErrorWrapper.error {
-        throw error
-    }
-}
-
-private final class ThrownErrorWrapper: @unchecked Sendable {
-
-    private var _error: Error?
-
-    var error: Error? {
-        get {
-            Entita2Tests.subsystemQueue.sync { _error }
-        }
-        set {
-            Entita2Tests.subsystemQueue.sync { _error = newValue }
-        }
-    }
-}
-
-// #endif
+import Foundation
+import MessagePack
+import XCTest
 
 final class Entita2Tests: XCTestCase {
-    internal static let subsystemQueue = DispatchQueue(label: "org.swift.XCTest.XCTWaiter.TEMPORARY")
-
     static let storage = DummyStorage()
 
     struct DummyStorage: E2Storage {
@@ -75,7 +17,7 @@ final class Entita2Tests: XCTestCase {
             Transaction()
         }
 
-        func load(by key: Bytes, within transaction: AnyTransaction?) async throws -> Bytes? {
+        func load(by key: Bytes, within _: AnyTransaction?) async throws -> Bytes? {
             let result: Bytes?
 
             switch key {
@@ -114,16 +56,16 @@ final class Entita2Tests: XCTestCase {
         }
 
         func save(
-            bytes: Bytes,
-            by key: Bytes,
-            within transaction: AnyTransaction?
+            bytes _: Bytes,
+            by _: Bytes,
+            within _: AnyTransaction?
         ) async throws {
             // noop
         }
 
         func delete(
-            by key: Bytes,
-            within transaction: AnyTransaction?
+            by _: Bytes,
+            within _: AnyTransaction?
         ) async throws {
             // noop
         }
@@ -199,61 +141,61 @@ final class Entita2Tests: XCTestCase {
         var didCallAfterDelete: Bool = false
 
         public func afterLoad0(
-            within transaction: AnyTransaction?
+            within _: AnyTransaction?
         ) async throws {
-            self.didCallAfterLoad0 = true
+            didCallAfterLoad0 = true
         }
 
-        public func afterLoad(within transaction: AnyTransaction?) async throws {
-            self.didCallAfterLoad = true
+        public func afterLoad(within _: AnyTransaction?) async throws {
+            didCallAfterLoad = true
         }
 
-        func beforeSave0(within transaction: AnyTransaction?) async throws {
-            self.didCallBeforeSave0 = true
+        func beforeSave0(within _: AnyTransaction?) async throws {
+            didCallBeforeSave0 = true
         }
 
-        func beforeSave(within transaction: AnyTransaction?) async throws {
-            self.didCallBeforeSave = true
+        func beforeSave(within _: AnyTransaction?) async throws {
+            didCallBeforeSave = true
         }
 
-        func afterSave0(within transaction: AnyTransaction?) async throws {
-            self.didCallAfterSave0 = true
+        func afterSave0(within _: AnyTransaction?) async throws {
+            didCallAfterSave0 = true
         }
 
-        func afterSave(within transaction: AnyTransaction?) async throws {
-            self.didCallAfterSave = true
+        func afterSave(within _: AnyTransaction?) async throws {
+            didCallAfterSave = true
         }
 
-        func beforeInsert0(within transaction: AnyTransaction?) async throws {
-            self.didCallBeforeInsert0 = true
+        func beforeInsert0(within _: AnyTransaction?) async throws {
+            didCallBeforeInsert0 = true
         }
 
-        func beforeInsert(within transaction: AnyTransaction?) async throws {
-            self.didCallBeforeInsert = true
+        func beforeInsert(within _: AnyTransaction?) async throws {
+            didCallBeforeInsert = true
         }
 
-        func afterInsert(within transaction: AnyTransaction?) async throws {
-            self.didCallAfterInsert = true
+        func afterInsert(within _: AnyTransaction?) async throws {
+            didCallAfterInsert = true
         }
 
-        func afterInsert0(within transaction: AnyTransaction?) async throws {
-            self.didCallAfterInsert0 = true
+        func afterInsert0(within _: AnyTransaction?) async throws {
+            didCallAfterInsert0 = true
         }
 
-        func beforeDelete0(within transaction: AnyTransaction?) async throws {
-            self.didCallBeforeDelete0 = true
+        func beforeDelete0(within _: AnyTransaction?) async throws {
+            didCallBeforeDelete0 = true
         }
 
-        func beforeDelete(within transaction: AnyTransaction?) async throws {
-            self.didCallBeforeDelete = true
+        func beforeDelete(within _: AnyTransaction?) async throws {
+            didCallBeforeDelete = true
         }
 
-        func afterDelete0(within transaction: AnyTransaction?) async throws {
-            self.didCallAfterDelete0 = true
+        func afterDelete0(within _: AnyTransaction?) async throws {
+            didCallAfterDelete0 = true
         }
 
-        func afterDelete(within transaction: AnyTransaction?) async throws {
-            self.didCallAfterDelete = true
+        func afterDelete(within _: AnyTransaction?) async throws {
+            didCallAfterDelete = true
         }
 
         var ID: Identifier
@@ -293,7 +235,7 @@ final class Entita2Tests: XCTestCase {
 
         var ID: Identifier
 
-        func pack(to format: E2.Format = Self.format) throws -> Bytes {
+        func pack(to _: E2.Format = Self.format) throws -> Bytes {
             throw EncodingError.invalidValue(
                 "test",
                 EncodingError.Context(
@@ -331,7 +273,7 @@ final class Entita2Tests: XCTestCase {
         XCTAssertEqual(sampleEntity.subEntity.customID._bytes, sampleCustomIDBytes)
 
         let prefix = getBytes("TestEntity:")
-        XCTAssertEqual(TestEntity.IDBytesAsKey(bytes: [1,2,3]), prefix + [1,2,3])
+        XCTAssertEqual(TestEntity.IDBytesAsKey(bytes: [1, 2, 3]), prefix + [1, 2, 3])
         XCTAssertEqual(TestEntity.IDAsKey(ID: sampleEntity.ID), prefix + sampleIDBytes)
         XCTAssertEqual(sampleEntity.getIDAsKey(), prefix + sampleIDBytes)
     }
