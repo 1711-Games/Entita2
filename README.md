@@ -93,7 +93,7 @@ If you want to perform some actions before or after any CRUD operation, you may 
 in your entity:
 
 ```swift
-func afterLoad(within transaction: AnyTransaction?) async throws
+func afterLoad(within transaction: (any Transaction)?) async throws
 ```
 
 There are seven methods of such kind (including `afterLoad`, but not `beforeLoad`, because it's nonsense):
@@ -136,23 +136,23 @@ It requires four methods:
 
 ```swift
 /// Begins a transaction if `Storage` is transactional
-func begin() async throws -> AnyTransaction
+func begin() async throws -> any Transaction
 
 /// Tries to load bytes from storage for given key within a transaction
-func load(by key: Bytes, within transaction: AnyTransaction?) async throws -> Bytes?
+func load(by key: Bytes, within transaction: (any Transaction)?) async throws -> Bytes?
 
 /// Saves given bytes at given key within a transaction
 func save(
     bytes: Bytes,
     by key: Bytes,
-    within transaction: AnyTransaction?
+    within transaction: (any Transaction)?
 ) async throws
 
 /// Deletes a given key (and value) from storage within a transaction
-func delete(by key: Bytes, within transaction: AnyTransaction?) async throws
+func delete(by key: Bytes, within transaction: (any Transaction)?) async throws
 ```
 
-`AnyTransaction` is a protocol for a transaction, it has to have just one method:
+`Transaction` is a protocol for a transaction, it has to have just one method:
 
 ```swift
 func commit() async throws

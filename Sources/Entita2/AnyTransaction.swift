@@ -1,5 +1,5 @@
 /// A very abstract transaction
-public protocol AnyTransaction: Sendable {
+public protocol Transaction: Sendable {
     /// Commits current transaction
     func commit() async throws
 }

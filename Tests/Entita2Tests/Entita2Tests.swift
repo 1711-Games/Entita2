@@ -7,17 +7,17 @@ final class Entita2Tests: XCTestCase {
     static let storage = DummyStorage()
 
     struct DummyStorage: E2Storage {
-        struct Transaction: AnyTransaction {
+        struct DummyTransaction: Transaction {
             func commit() async throws {
                 // noop
             }
         }
 
-        func begin() throws -> AnyTransaction {
-            Transaction()
+        func begin() throws -> any Transaction {
+            DummyTransaction()
         }
 
-        func load(by key: Bytes, within _: AnyTransaction?) async throws -> Bytes? {
+        func load(by key: Bytes, within _: (any Transaction)?) async throws -> Bytes? {
             let result: Bytes?
 
             switch key {
@@ -58,14 +58,14 @@ final class Entita2Tests: XCTestCase {
         func save(
             bytes _: Bytes,
             by _: Bytes,
-            within _: AnyTransaction?
+            within _: (any Transaction)?
         ) async throws {
             // noop
         }
 
         func delete(
             by _: Bytes,
-            within _: AnyTransaction?
+            within _: (any Transaction)?
         ) async throws {
             // noop
         }
@@ -75,7 +75,7 @@ final class Entita2Tests: XCTestCase {
         struct SubEntity: E2Entity, Equatable {
             typealias Identifier = Int
 
-            static var storage: some Entita2Storage = Entita2Tests.storage
+            static var storage: any Entita2Storage = Entita2Tests.storage
             static var fullEntityName: Bool = false
             static var format: E2.Format = .JSON
             static var IDKey: KeyPath<SubEntity, Identifier> = \.customID
@@ -99,7 +99,7 @@ final class Entita2Tests: XCTestCase {
 
         typealias Identifier = E2.UUID
 
-        static var storage: DummyStorage = Entita2Tests.storage
+        static var storage: any Entita2Storage = Entita2Tests.storage
         static var format: E2.Format = .JSON
         static var IDKey: KeyPath<TestEntity, Identifier> = \.ID
         static var sampleEntity: TestEntity {
@@ -141,60 +141,60 @@ final class Entita2Tests: XCTestCase {
         var didCallAfterDelete: Bool = false
 
         public func afterLoad0(
-            within _: AnyTransaction?
+            within _: (any Transaction)?
         ) async throws {
             didCallAfterLoad0 = true
         }
 
-        public func afterLoad(within _: AnyTransaction?) async throws {
+        public func afterLoad(within _: (any Transaction)?) async throws {
             didCallAfterLoad = true
         }
 
-        func beforeSave0(within _: AnyTransaction?) async throws {
+        func beforeSave0(within _: (any Transaction)?) async throws {
             didCallBeforeSave0 = true
         }
 
-        func beforeSave(within _: AnyTransaction?) async throws {
+        func beforeSave(within _: (any Transaction)?) async throws {
             didCallBeforeSave = true
         }
 
-        func afterSave0(within _: AnyTransaction?) async throws {
+        func afterSave0(within _: (any Transaction)?) async throws {
             didCallAfterSave0 = true
         }
 
-        func afterSave(within _: AnyTransaction?) async throws {
+        func afterSave(within _: (any Transaction)?) async throws {
             didCallAfterSave = true
         }
 
-        func beforeInsert0(within _: AnyTransaction?) async throws {
+        func beforeInsert0(within _: (any Transaction)?) async throws {
             didCallBeforeInsert0 = true
         }
 
-        func beforeInsert(within _: AnyTransaction?) async throws {
+        func beforeInsert(within _: (any Transaction)?) async throws {
             didCallBeforeInsert = true
         }
 
-        func afterInsert(within _: AnyTransaction?) async throws {
+        func afterInsert(within _: (any Transaction)?) async throws {
             didCallAfterInsert = true
         }
 
-        func afterInsert0(within _: AnyTransaction?) async throws {
+        func afterInsert0(within _: (any Transaction)?) async throws {
             didCallAfterInsert0 = true
         }
 
-        func beforeDelete0(within _: AnyTransaction?) async throws {
+        func beforeDelete0(within _: (any Transaction)?) async throws {
             didCallBeforeDelete0 = true
         }
 
-        func beforeDelete(within _: AnyTransaction?) async throws {
+        func beforeDelete(within _: (any Transaction)?) async throws {
             didCallBeforeDelete = true
         }
 
-        func afterDelete0(within _: AnyTransaction?) async throws {
+        func afterDelete0(within _: (any Transaction)?) async throws {
             didCallAfterDelete0 = true
         }
 
-        func afterDelete(within _: AnyTransaction?) async throws {
+        func afterDelete(within _: (any Transaction)?) async throws {
             didCallAfterDelete = true
         }
 
@@ -228,7 +228,7 @@ final class Entita2Tests: XCTestCase {
     struct InvalidPackEntity: E2Entity {
         typealias Identifier = Int
 
-        static var storage: some Entita2Storage = Entita2Tests.storage
+        static var storage: any Entita2Storage = Entita2Tests.storage
         static var fullEntityName: Bool = false
         static var format: E2.Format = .JSON
         static var IDKey: KeyPath<InvalidPackEntity, Identifier> = \.ID
