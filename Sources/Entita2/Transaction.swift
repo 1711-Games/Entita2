@@ -1,5 +1,5 @@
 /// A very abstract transaction
-public protocol Transaction: Sendable {
+public protocol Entita2Transaction: Sendable {
     /// Commits current transaction
     func commit() async throws
 }

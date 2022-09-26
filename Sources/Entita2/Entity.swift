@@ -42,90 +42,90 @@ public protocol Entita2Entity: Codable {
     func pack(to format: Entita2.Format) throws -> Bytes
 
     /// Tries to load an entity from storage by given ID
-    static func load(by ID: Identifier, within transaction: (any Transaction)?) async throws -> Self?
+    static func load(by ID: Identifier, within transaction: (any Entita2Transaction)?) async throws -> Self?
 
     /// Tries to load an entity from storage by given ID bytes within given transaction
-    static func loadBy(IDBytes: Bytes, within transaction: (any Transaction)?) async throws -> Self?
+    static func loadBy(IDBytes: Bytes, within transaction: (any Entita2Transaction)?) async throws -> Self?
 
     /// Tries to load an entity from storage by given ID raw bytes within given transaction.
     /// For details and format of raw ID see `Self.IDBytesAsKey`
-    static func loadByRaw(IDBytes: Bytes, within transaction: (any Transaction)?) async throws -> Self?
+    static func loadByRaw(IDBytes: Bytes, within transaction: (any Entita2Transaction)?) async throws -> Self?
 
     /// Executes some system routines after successful entity load.
     /// Do not define or execute this method, instead go for `afterLoad`
-    func afterLoad0(within transaction: (any Transaction)?) async throws
+    func afterLoad0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some routines after successful entity load.
     /// You may define this method in order to implement custom logic
-    func afterLoad(within transaction: (any Transaction)?) async throws
+    func afterLoad(within transaction: (any Entita2Transaction)?) async throws
 
     /// Same as `save`, but with executes `beforeInsert` and `afterInsert` before and after insert respectively.
-    func insert(within transaction: (any Transaction)?, commit: Bool) async throws
+    func insert(within transaction: (any Entita2Transaction)?, commit: Bool) async throws
 
     /// Saves current entity to storage and optionally commits current transaction if possible
-    func save(within transaction: (any Transaction)?, commit: Bool) async throws
+    func save(within transaction: (any Entita2Transaction)?, commit: Bool) async throws
 
     /// Saves current entity to storage by given identifier and optionally commits current transaction if possible
-    func save(by ID: Identifier?, within transaction: (any Transaction)?, commit: Bool) async throws
+    func save(by ID: Identifier?, within transaction: (any Entita2Transaction)?, commit: Bool) async throws
 
     /// Deletes current entity from storage and optionally commits current transaction if possible
-    func delete(within transaction: (any Transaction)?, commit: Bool) async throws
+    func delete(within transaction: (any Entita2Transaction)?, commit: Bool) async throws
     
     /// Executes some system routines for saving the entity to storage
     /// Do not define or execute this method
-    func save0(by ID: Identifier?, within transaction: (any Transaction)?) async throws
+    func save0(by ID: Identifier?, within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some system routines for deleting the entity from the storage
     /// Do not define or execute this method
-    func delete0(within transaction: (any Transaction)?) async throws
+    func delete0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some system routines before inserting an entity.
     /// Do not define or execute this method
-    func beforeInsert0(within transaction: (any Transaction)?) async throws
+    func beforeInsert0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some routines before inserting an entity.
     /// Do execute this method
-    func beforeInsert(within transaction: (any Transaction)?) async throws
+    func beforeInsert(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some routines after inserting an entity.
     /// Do execute this method
-    func afterInsert(within transaction: (any Transaction)?) async throws
+    func afterInsert(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some system routines after inserting an entity.
     /// Do not define or execute this method
-    func afterInsert0(within transaction: (any Transaction)?) async throws
+    func afterInsert0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some system routines before saving an entity.
     /// Do not define or execute this method
-    func beforeSave0(within transaction: (any Transaction)?) async throws
+    func beforeSave0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some routines before saving an entity.
     /// Do not execute this method
-    func beforeSave(within transaction: (any Transaction)?) async throws
+    func beforeSave(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some routines after saving an entity.
     /// Do not execute this method
-    func afterSave(within transaction: (any Transaction)?) async throws
+    func afterSave(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some system routines after saving an entity.
     /// Do not define or execute this method
-    func afterSave0(within transaction: (any Transaction)?) async throws
+    func afterSave0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some system routines before deleting an entity.
     /// Do not define or execute this method
-    func beforeDelete0(within transaction: (any Transaction)?) async throws
+    func beforeDelete0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some routines before deleting an entity.
     /// Do not execute this method
-    func beforeDelete(within transaction: (any Transaction)?) async throws
+    func beforeDelete(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some routines after deleting an entity.
     /// Do not execute this method
-    func afterDelete(within transaction: (any Transaction)?) async throws
+    func afterDelete(within transaction: (any Entita2Transaction)?) async throws
 
     /// Executes some system routines after deleting an entity.
     /// Do not define or execute this method
-    func afterDelete0(within transaction: (any Transaction)?) async throws
+    func afterDelete0(within transaction: (any Entita2Transaction)?) async throws
 
     /// Returns an ID of current entity
     func getID() -> Identifier

@@ -7,17 +7,17 @@ final class Entita2Tests: XCTestCase {
     static let storage = DummyStorage()
 
     struct DummyStorage: E2Storage {
-        struct DummyTransaction: Transaction {
+        struct DummyTransaction: Entita2Transaction {
             func commit() async throws {
                 // noop
             }
         }
 
-        func begin() throws -> any Transaction {
+        func begin() throws -> any Entita2Transaction {
             DummyTransaction()
         }
 
-        func load(by key: Bytes, within _: (any Transaction)?) async throws -> Bytes? {
+        func load(by key: Bytes, within _: (any Entita2Transaction)?) async throws -> Bytes? {
             let result: Bytes?
 
             switch key {
@@ -58,14 +58,14 @@ final class Entita2Tests: XCTestCase {
         func save(
             bytes _: Bytes,
             by _: Bytes,
-            within _: (any Transaction)?
+            within _: (any Entita2Transaction)?
         ) async throws {
             // noop
         }
 
         func delete(
             by _: Bytes,
-            within _: (any Transaction)?
+            within _: (any Entita2Transaction)?
         ) async throws {
             // noop
         }
@@ -141,60 +141,60 @@ final class Entita2Tests: XCTestCase {
         var didCallAfterDelete: Bool = false
 
         public func afterLoad0(
-            within _: (any Transaction)?
+            within _: (any Entita2Transaction)?
         ) async throws {
             didCallAfterLoad0 = true
         }
 
-        public func afterLoad(within _: (any Transaction)?) async throws {
+        public func afterLoad(within _: (any Entita2Transaction)?) async throws {
             didCallAfterLoad = true
         }
 
-        func beforeSave0(within _: (any Transaction)?) async throws {
+        func beforeSave0(within _: (any Entita2Transaction)?) async throws {
             didCallBeforeSave0 = true
         }
 
-        func beforeSave(within _: (any Transaction)?) async throws {
+        func beforeSave(within _: (any Entita2Transaction)?) async throws {
             didCallBeforeSave = true
         }
 
-        func afterSave0(within _: (any Transaction)?) async throws {
+        func afterSave0(within _: (any Entita2Transaction)?) async throws {
             didCallAfterSave0 = true
         }
 
-        func afterSave(within _: (any Transaction)?) async throws {
+        func afterSave(within _: (any Entita2Transaction)?) async throws {
             didCallAfterSave = true
         }
 
-        func beforeInsert0(within _: (any Transaction)?) async throws {
+        func beforeInsert0(within _: (any Entita2Transaction)?) async throws {
             didCallBeforeInsert0 = true
         }
 
-        func beforeInsert(within _: (any Transaction)?) async throws {
+        func beforeInsert(within _: (any Entita2Transaction)?) async throws {
             didCallBeforeInsert = true
         }
 
-        func afterInsert(within _: (any Transaction)?) async throws {
+        func afterInsert(within _: (any Entita2Transaction)?) async throws {
             didCallAfterInsert = true
         }
 
-        func afterInsert0(within _: (any Transaction)?) async throws {
+        func afterInsert0(within _: (any Entita2Transaction)?) async throws {
             didCallAfterInsert0 = true
         }
 
-        func beforeDelete0(within _: (any Transaction)?) async throws {
+        func beforeDelete0(within _: (any Entita2Transaction)?) async throws {
             didCallBeforeDelete0 = true
         }
 
-        func beforeDelete(within _: (any Transaction)?) async throws {
+        func beforeDelete(within _: (any Entita2Transaction)?) async throws {
             didCallBeforeDelete = true
         }
 
-        func afterDelete0(within _: (any Transaction)?) async throws {
+        func afterDelete0(within _: (any Entita2Transaction)?) async throws {
             didCallAfterDelete0 = true
         }
 
-        func afterDelete(within _: (any Transaction)?) async throws {
+        func afterDelete(within _: (any Entita2Transaction)?) async throws {
             didCallAfterDelete = true
         }
 

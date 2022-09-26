@@ -24,24 +24,24 @@ public extension Entita2Entity {
         Self.IDAsKey(ID: getID())
     }
 
-    static func loadBy(IDBytes: Bytes, within transaction: (any Transaction)? = nil) async throws -> Self? {
+    static func loadBy(IDBytes: Bytes, within transaction: (any Entita2Transaction)? = nil) async throws -> Self? {
         try await Self.loadByRaw(
             IDBytes: Self.IDBytesAsKey(bytes: IDBytes)
         )
     }
 
-    static func loadByRaw(IDBytes: Bytes, within transaction: (any Transaction)? = nil) async throws -> Self? {
+    static func loadByRaw(IDBytes: Bytes, within transaction: (any Entita2Transaction)? = nil) async throws -> Self? {
         return try await self.afterLoadRoutines0(
             maybeBytes: try await self.storage.load(by: IDBytes, within: transaction),
             within: transaction
         )
     }
 
-    static func load(by ID: Identifier, within transaction: (any Transaction)? = nil) async throws -> Self? {
+    static func load(by ID: Identifier, within transaction: (any Entita2Transaction)? = nil) async throws -> Self? {
         try await Self.loadByRaw(IDBytes: Self.IDAsKey(ID: ID), within: transaction)
     }
 
-    static func afterLoadRoutines0(maybeBytes: Bytes?, within transaction: (any Transaction)?) async throws -> Self? {
+    static func afterLoadRoutines0(maybeBytes: Bytes?, within transaction: (any Entita2Transaction)?) async throws -> Self? {
         guard let bytes = maybeBytes else {
             return nil
         }
@@ -54,20 +54,20 @@ public extension Entita2Entity {
         return entity
     }
 
-    func afterLoad0(within transaction: (any Transaction)?) async throws {}
-    func afterLoad(within transaction: (any Transaction)?) async throws {}
-    func beforeSave0(within transaction: (any Transaction)?) async throws {}
-    func beforeSave(within transaction: (any Transaction)?) async throws {}
-    func afterSave0(within transaction: (any Transaction)?) async throws {}
-    func afterSave(within transaction: (any Transaction)?) async throws {}
-    func beforeInsert0(within transaction: (any Transaction)?) async throws {}
-    func beforeInsert(within transaction: (any Transaction)?) async throws {}
-    func afterInsert(within transaction: (any Transaction)?) async throws {}
-    func afterInsert0(within transaction: (any Transaction)?) async throws {}
-    func beforeDelete0(within transaction: (any Transaction)?) async throws {}
-    func beforeDelete(within transaction: (any Transaction)?) async throws {}
-    func afterDelete0(within transaction: (any Transaction)?) async throws {}
-    func afterDelete(within transaction: (any Transaction)?) async throws {}
+    func afterLoad0(within transaction: (any Entita2Transaction)?) async throws {}
+    func afterLoad(within transaction: (any Entita2Transaction)?) async throws {}
+    func beforeSave0(within transaction: (any Entita2Transaction)?) async throws {}
+    func beforeSave(within transaction: (any Entita2Transaction)?) async throws {}
+    func afterSave0(within transaction: (any Entita2Transaction)?) async throws {}
+    func afterSave(within transaction: (any Entita2Transaction)?) async throws {}
+    func beforeInsert0(within transaction: (any Entita2Transaction)?) async throws {}
+    func beforeInsert(within transaction: (any Entita2Transaction)?) async throws {}
+    func afterInsert(within transaction: (any Entita2Transaction)?) async throws {}
+    func afterInsert0(within transaction: (any Entita2Transaction)?) async throws {}
+    func beforeDelete0(within transaction: (any Entita2Transaction)?) async throws {}
+    func beforeDelete(within transaction: (any Entita2Transaction)?) async throws {}
+    func afterDelete0(within transaction: (any Entita2Transaction)?) async throws {}
+    func afterDelete(within transaction: (any Entita2Transaction)?) async throws {}
 
     func getPackedSelf() throws -> Bytes {
         let result: Bytes
@@ -84,7 +84,7 @@ public extension Entita2Entity {
     //MARK: - Public 0-methods
     
     /// This method is not intended to be used directly. Use `save()` method.
-    func save0(by ID: Identifier? = nil, within transaction: (any Transaction)?) async throws {
+    func save0(by ID: Identifier? = nil, within transaction: (any Entita2Transaction)?) async throws {
         let IDBytes: Bytes
         if let ID = ID {
             IDBytes = Self.IDAsKey(ID: ID)
@@ -100,7 +100,7 @@ public extension Entita2Entity {
     }
 
     /// This method is not intended to be used directly. Use `save()` method.
-    func delete0(within transaction: (any Transaction)?) async throws {
+    func delete0(within transaction: (any Entita2Transaction)?) async throws {
         try await Self.storage.delete(
             by: self.getIDAsKey(),
             within: transaction
@@ -108,18 +108,18 @@ public extension Entita2Entity {
     }
 
     /// This method is not intended to be used directly
-    func commit0(transaction: (any Transaction)?) async throws {
+    func commit0(transaction: (any Entita2Transaction)?) async throws {
         try await transaction?.commit()
     }
 
-    internal func commit0IfNecessary(commit: Bool, transaction: (any Transaction)?) async throws {
+    internal func commit0IfNecessary(commit: Bool, transaction: (any Entita2Transaction)?) async throws {
         if commit  {
             try await self.commit0(transaction: transaction)
         }
     }
 
     @usableFromInline
-    internal static func unwrapTransactionOrBegin(_ transaction: (any Transaction)?) async throws -> any Transaction {
+    internal static func unwrapTransactionOrBegin(_ transaction: (any Entita2Transaction)?) async throws -> any Entita2Transaction {
         if let transaction {
             return transaction
         }
@@ -129,7 +129,7 @@ public extension Entita2Entity {
     // MARK: - Public CRUD methods
 
     /// Inserts current entity to DB within given transaction
-    func insert(within transaction: (any Transaction)? = nil, commit: Bool = true) async throws {
+    func insert(within transaction: (any Entita2Transaction)? = nil, commit: Bool = true) async throws {
         let transaction = try await Self.unwrapTransactionOrBegin(transaction)
         
         try await self.beforeInsert0(within: transaction)
@@ -141,12 +141,12 @@ public extension Entita2Entity {
     }
 
     /// Saves current entity to DB
-    func save(within transaction: (any Transaction)? = nil, commit: Bool = true) async throws {
+    func save(within transaction: (any Entita2Transaction)? = nil, commit: Bool = true) async throws {
         try await self.save(by: nil, within: transaction, commit: commit)
     }
 
     /// Saves current entity to DB within given transaction
-    func save(by ID: Identifier? = nil, within transaction: (any Transaction)? = nil, commit: Bool = true) async throws {
+    func save(by ID: Identifier? = nil, within transaction: (any Entita2Transaction)? = nil, commit: Bool = true) async throws {
         let transaction = try await Self.unwrapTransactionOrBegin(transaction)
 
         try await self.beforeSave0(within: transaction)
@@ -158,7 +158,7 @@ public extension Entita2Entity {
     }
 
     /// Deletes current entity from DB within given transaction
-    func delete(within transaction: (any Transaction)? = nil, commit: Bool = true) async throws {
+    func delete(within transaction: (any Entita2Transaction)? = nil, commit: Bool = true) async throws {
         let transaction = try await Self.unwrapTransactionOrBegin(transaction)
 
         try await self.beforeDelete0(within: transaction)
