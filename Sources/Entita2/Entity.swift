@@ -12,6 +12,8 @@ public protocol Entita2Entity: Codable {
     /// Type of ID field of entity
     associatedtype Identifier: Identifiable
 
+    associatedtype Storage: Entita2Storage
+
     /// Path to ID field
     typealias IDKeyPath = KeyPath<Self, Identifier>
 
@@ -19,7 +21,7 @@ public protocol Entita2Entity: Codable {
     static var format: Entita2.Format { get }
 
     /// Storage
-    static var storage: any Entita2Storage { get set }
+    static var storage: Storage { get set }
 
     /// Entity name for identifying in DB
     ///

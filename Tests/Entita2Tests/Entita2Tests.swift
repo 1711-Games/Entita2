@@ -75,7 +75,7 @@ final class Entita2Tests: XCTestCase {
         struct SubEntity: E2Entity, Equatable {
             typealias Identifier = Int
 
-            static var storage: any Entita2Storage = Entita2Tests.storage
+            static var storage = Entita2Tests.storage
             static var fullEntityName: Bool = false
             static var format: E2.Format = .JSON
             static var IDKey: KeyPath<SubEntity, Identifier> = \.customID
@@ -99,7 +99,7 @@ final class Entita2Tests: XCTestCase {
 
         typealias Identifier = E2.UUID
 
-        static var storage: any Entita2Storage = Entita2Tests.storage
+        static var storage = Entita2Tests.storage
         static var format: E2.Format = .JSON
         static var IDKey: KeyPath<TestEntity, Identifier> = \.ID
         static var sampleEntity: TestEntity {
@@ -228,7 +228,7 @@ final class Entita2Tests: XCTestCase {
     struct InvalidPackEntity: E2Entity {
         typealias Identifier = Int
 
-        static var storage: any Entita2Storage = Entita2Tests.storage
+        static var storage = Entita2Tests.storage
         static var fullEntityName: Bool = false
         static var format: E2.Format = .JSON
         static var IDKey: KeyPath<InvalidPackEntity, Identifier> = \.ID
